@@ -1,2 +1,2 @@
-# ha_pid_shared
+# ha-pid_shared
 Shared code for multiple Homeassitant PID controller implementations
