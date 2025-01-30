@@ -2,23 +2,21 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
 import math
-from typing import Any
+from datetime import timedelta
+from typing import TYPE_CHECKING, Any, Never
 
-from dvg_pid_controller import Constants as PID_CONST, PID_Controller as PID
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
-from homeassistant.config_entries import ConfigEntry
+from dvg_pid_controller import Constants as PIDConst
+from dvg_pid_controller import PID_Controller as PID
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import service
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import DATA_ENTITY_PLATFORM
 from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.helpers.typing import ConfigType
 
 from .const import (  # noqa: F401
     ATTR_CYCLE_TIME,
@@ -39,6 +37,10 @@ from .const import (  # noqa: F401
     SERVICE_ENABLE,
 )
 
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.helpers.typing import ConfigType
+
 PLATFORMS = [Platform.NUMBER]
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,9 +49,14 @@ class PidBaseClass(Entity):
     """Base class for PID entities."""
 
     # pylint: disable=too-many-arguments
-    def __init__(
-        self, k_p=1, k_i=0.01, k_d=0, direction=PID_CONST.DIRECT, cycle_time="00:00:10"
-    ):
+    def __init__(  # noqa: PLR0913
+        self,
+        k_p: float = 1,
+        k_i: float = 0.01,
+        k_d: float = 0,
+        direction: PIDConst = PIDConst.DIRECT,
+        cycle_time: str | timedelta = "00:00:10",
+    ) -> None:
         """Initialize PID base class."""
         self._pid = PID(k_p, k_i, k_d, direction)
         if isinstance(cycle_time, timedelta):
@@ -73,8 +80,9 @@ class PidBaseClass(Entity):
         attr[ATTR_PID_ENABLE] = str((self.enable_pid,))
         return attr
 
-    async def _async_start_pid_cycle(self):
-        """Start periodical cycle of PID controller.
+    async def _async_start_pid_cycle(self) -> None:
+        """
+        Start periodical cycle of PID controller.
 
         Call this when added to hass, and hass is fully started.
         """
@@ -117,14 +125,14 @@ class PidBaseClass(Entity):
         """PID controller enabled."""
         return self._pid.in_auto
 
-    async def async_enable(self, value: bool):
+    async def async_enable(self, *, value: bool) -> Never:
         """Enable or disable PID regulator."""
         # Raise Not Yet implemented error; has to be implemented per controller
         # Use self._pid.set_mode (mode,
         #                input_state , output_state, optional:input2_state )
-        raise NotImplementedError()
+        raise NotImplementedError
 
-    def filter_nan(self, value: float):
+    def filter_nan(self, value: float) -> float | None:
         """Filter floats for NAN."""
         if math.isnan(value):
             return None
@@ -146,8 +154,9 @@ class PidBaseClass(Entity):
         return self.filter_nan(self._pid.last_error)
 
     @callback
-    async def _async_pid_cycle(self, args=None):
-        """Cycle PID regulator.
+    async def _async_pid_cycle(self, *_: Any) -> Never:
+        """
+        Cycle PID regulator.
 
         Will raise NotImplemented error; should be implemented per controller.
         Use self._pid.compute(input,optional:input2 ) and self._pid.output to
@@ -157,7 +166,7 @@ class PidBaseClass(Entity):
         Don't forget to update last_cycle_start as below:
         self._attr_last_cycle_start = dt_util.utcnow().replace(microsecond=0)
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -169,7 +178,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def config_entry_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Update listener.
+    """
+    Update listener.
 
     Called when the config entry options are changed.
     """
@@ -179,32 +189,3 @@ async def config_entry_update_listener(hass: HomeAssistant, entry: ConfigEntry) 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
-
-# pylint: disable=unused-argument
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register services for PID entities."""
-
-    @service.verify_domain_control(hass, DOMAIN)
-    async def async_service_handle(service_call: ServiceCall) -> None:
-        """Handle services.
-
-        Dispatch the right service call to the right entity.
-        """
-        # Next code will do a service call to all entities in the
-        # current domain that contain the entitiy_id form service_call data
-        # hass.data will get all available platforms in this domain.
-        await service.entity_service_call(
-            hass,
-            list(hass.data[DATA_ENTITY_PLATFORM][DOMAIN]),
-            "async_" + service_call.service,
-            service_call,
-        )
-
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_ENABLE,
-        async_service_handle,
-        cv.make_entity_service_schema({vol.Required(ATTR_VALUE): vol.Coerce(bool)}),
-    )
-    return True
