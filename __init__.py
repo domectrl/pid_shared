@@ -7,18 +7,14 @@ import math
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Never
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from dvg_pid_controller import Constants as PIDConst
 from dvg_pid_controller import PID_Controller as PID
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.helpers import service
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.entity_platform import DATA_ENTITY_PLATFORM
 from homeassistant.helpers.event import async_track_time_interval
 
-from .const import (  # noqa: F401
+from .const import (
     ATTR_CYCLE_TIME,
     ATTR_LAST_CYCLE_START,
     ATTR_PID_ENABLE,
@@ -28,18 +24,10 @@ from .const import (  # noqa: F401
     ATTR_PID_KI,
     ATTR_PID_KP,
     ATTR_PID_OUTPUT,
-    ATTR_VALUE,
-    CONF_CYCLE_TIME,
-    CONF_PID_KD,
-    CONF_PID_KI,
-    CONF_PID_KP,
-    DOMAIN,
-    SERVICE_ENABLE,
 )
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
-    from homeassistant.helpers.typing import ConfigType
 
 PLATFORMS = [Platform.NUMBER]
 _LOGGER = logging.getLogger(__name__)
