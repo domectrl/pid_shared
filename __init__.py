@@ -37,7 +37,7 @@ class PidBaseClass(Entity):
     """Base class for PID entities."""
 
     # pylint: disable=too-many-arguments
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         k_p: float = 1,
         k_i: float = 0.01,
