@@ -54,18 +54,18 @@ class PidBaseClass(Entity):
         self._attr_last_cycle_start: str = None
 
     @property
-    def pid_capability_attributes(self) -> dict[str, Any]:
+    def pid_state_attributes(self) -> dict[str, Any]:
         """Return capability attributes."""
         attr = {}
         attr[ATTR_CYCLE_TIME] = self.cycle_time
-        attr[ATTR_PID_KP] = str(self.k_p)
-        attr[ATTR_PID_KI] = str(self.k_i)
-        attr[ATTR_PID_KD] = str(self.k_d)
-        attr[ATTR_PID_INPUT] = str(self.pid_input)
-        attr[ATTR_PID_OUTPUT] = str(self.pid_output)
-        attr[ATTR_PID_ERROR] = str(self.pid_error)
-        attr[ATTR_LAST_CYCLE_START] = str((self.last_cycle_start,))
-        attr[ATTR_PID_ENABLE] = str((self.enable_pid,))
+        attr[ATTR_PID_KP] = self.k_p
+        attr[ATTR_PID_KI] = self.k_i
+        attr[ATTR_PID_KD] = self.k_d
+        attr[ATTR_PID_INPUT] = self.pid_input
+        attr[ATTR_PID_OUTPUT] = self.pid_output
+        attr[ATTR_PID_ERROR] = self.pid_error
+        attr[ATTR_LAST_CYCLE_START] = self._attr_last_cycle_start
+        attr[ATTR_PID_ENABLE] = self.enable_pid
         return attr
 
     async def _async_start_pid_cycle(self) -> None:
